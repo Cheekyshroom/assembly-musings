@@ -10,6 +10,7 @@
 
 (module compiler racket/base
   (provide (all-defined-out))
+  (require racket/port)
 
   (define (index-of-char str char (start-index 0))
     (let ([length (string-length str)])
@@ -48,17 +49,62 @@
   (define function-prelude "\tpushq\t%rbx\n\tmovq\t%rsp, %rbx\n")
   (define function-postlude "\tmovq\t%rbx, %rsp\n\tpopq\t%rbx\n\tret\n")
   
-  ;;converts a list into a long string of assembly
-  (define (parse-list list)
-    list)
-     
-  ;;split string into lists of function applications
-  (define (parse-string string)
-    (let* ([start-i (index-of-substring string "*_")]
-           [end-i (index-of-substring string "_*" (add1 start-i))])
-      (if (and start-i end-i) ;;if we have a special directive
-          (let ([word (substring string start-i end-i)])
-            (cond [(string=? word "inline") 
-                  [(string=? word "code") #t]))
-          #t)))
+  ;;i points to the first # in ##token
+  (define (get-token string i)
+    (list->string (for/list ([ch (in-string string (+ i 2))]
+                             #:break (or (char=? ch #\newline)
+                                         (char=? ch #\space)))
+                    ch)))
+
+  ;;gets a list of the locations of all the 'special tokens' in a string
+  ;;and token data as a string
+  (define (special-tokens string)
+    (let loop ([i (index-of-substring string "##")])
+      (if i
+          (cons (cons (get-token string i) i) 
+                (loop (index-of-substring string "##" (add1 i))))
+          null)))
+
+  (define (handle-token string token token-handlers)
+    ((hash-ref token-handlers (car token)) string token))
+
+  (define (token-string-start token)
+    (+ (cdr token) 2 (string-length (car token))))
+
+  (define (parse-string string token-handlers)
+    (let loop ([tokens (special-tokens string)])
+      (if (null? tokens)
+          ""
+          (string-append 
+           (handle-token 
+            (substring string
+                       (token-string-start (car tokens))
+                       (if (null? (cdr tokens))
+                           (string-length string)
+                           (cdr (cadr tokens))))
+            (car tokens)
+            token-handlers)
+           (loop (cdr tokens))))))
+
+  (define (parse-code-string string token)
+    string)
+  
+  (define (parse-inline-string string token)
+    string)
+
+  (define token-handlers
+    (hash "inline" parse-inline-string
+          "code" parse-code-string))
+
+  (define (run-on-file input-filename output-filename)
+    (let ([in (open-input-file input-filename)]
+          [out (open-output-file output-filename)])
+      (write-string (parse-string (port->string in) token-handlers) out)
+      (close-output-port out)
+      (close-input-port in)))
+
+  (define (run)
+    (let ([args (current-command-line-arguments)])
+      (run-on-file (vector-ref args 0) (vector-ref args 1))))
+  (run)
   )
