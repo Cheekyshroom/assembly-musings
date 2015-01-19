@@ -63,7 +63,7 @@
       (if i
           (cons (cons (get-token string i) i) 
                 (loop (index-of-substring string "##" (add1 i))))
-          null)))
+          '())))
 
   (define (handle-token string token token-handlers)
     ((hash-ref token-handlers (car token)) string token))
@@ -86,19 +86,55 @@
             token-handlers)
            (loop (cdr tokens))))))
 
+  ;;parses a code string into a list of (perhaps nested) function calls
+  ;;like
+  ;;(foo 1 2 3)
+  ;;(bar 2)
+  ;;(fi (foo 4 5 6) 10)
+  ;;becomes
+  ;;'((foo 1 2 3) (bar 2) (fi (foo 4 5 6) 10))
+  (define (index-of-matching-paren string place)
+    (let loop ([i place]
+               [parenlevel 1])
+      (cond [(>= i (string-length string)) #f]
+            [(= parenlevel 0) i]
+            [else (loop (add1 i)
+                        (case (string-ref string i)
+                          [(#\() (add1 parenlevel)]
+                          [(#\)) (sub1 parenlevel)]
+                          [else parenlevel]))])))
+
+  (define (get-index-of-matching-paren string start-index)
+    (let ([first-paren (index-of-char string #\( start-index)])
+      (if first-paren
+          (index-of-matching-paren string (add1 first-paren))
+          #f)))
+
+  (define (code-string->code-tree string)
+    (let loop ([i (index-of-char string #\( 0)])
+      (if i
+          (let ([end (index-of-matching-paren string (add1 i))])
+            (if (and (< i (string-length string)) end)
+                (cons (substring string i end) 
+                      (loop (index-of-char string #\( (add1 end))))
+                '()))
+          '())))
+          
   (define (parse-code-string string token)
-    string)
+    (let ([code (code-string->code-tree string)])
+      code))
   
   (define (parse-inline-string string token)
     string)
 
   (define token-handlers
     (hash "inline" parse-inline-string
-          "code" parse-code-string))
+          "code" parse-code-string
+          "comment" (lambda (string token) "")))
 
   (define (run-on-file input-filename output-filename)
     (let ([in (open-input-file input-filename)]
-          [out (open-output-file output-filename)])
+          [out (open-output-file output-filename #:exists 'replace)])
       (write-string (parse-string (port->string in) token-handlers) out)
       (close-output-port out)
       (close-input-port in)))
@@ -106,5 +142,5 @@
   (define (run)
     (let ([args (current-command-line-arguments)])
       (run-on-file (vector-ref args 0) (vector-ref args 1))))
-  (run)
+  ;;(run)
   )
