@@ -11,6 +11,7 @@
 (module compiler racket/base
   (provide (all-defined-out))
   (require racket/port)
+  (require racket/string)
 
   (define (index-of-char str char (start-index 0))
     (let ([length (string-length str)])
@@ -42,34 +43,32 @@
         (begin0
             (string-append pconc-name (number->string current-value))
           (set! current-value (+ current-value 1))))))
-  
-  (define name-gensym (make-gensym-generator))
-  (define loop-gensym (make-gensym-generator "loop_"))
-  (define loop-end-gensym (make-gensym-generator "lend_"))
-  (define function-prelude "\tpushq\t%rbx\n\tmovq\t%rsp, %rbx\n")
-  (define function-postlude "\tmovq\t%rbx, %rsp\n\tpopq\t%rbx\n\tret\n")
-  
+
+  (define global-token "==>")
+
   ;;i points to the first # in ##token
   (define (get-token string i)
-    (list->string (for/list ([ch (in-string string (+ i 2))]
+    (list->string 
+     (for/list ([ch (in-string string (+ i (string-length global-token)))]
                              #:break (or (char=? ch #\newline)
                                          (char=? ch #\space)))
                     ch)))
 
+
   ;;gets a list of the locations of all the 'special tokens' in a string
   ;;and token data as a string
   (define (special-tokens string)
-    (let loop ([i (index-of-substring string "##")])
+    (let loop ([i (index-of-substring string global-token)])
       (if i
           (cons (cons (get-token string i) i) 
-                (loop (index-of-substring string "##" (add1 i))))
+                (loop (index-of-substring string global-token (add1 i))))
           '())))
 
   (define (handle-token string token token-handlers)
     ((hash-ref token-handlers (car token)) string token))
 
   (define (token-string-start token)
-    (+ (cdr token) 2 (string-length (car token))))
+    (+ (cdr token) (string-length global-token) (string-length (car token))))
 
   (define (parse-string string token-handlers)
     (let loop ([tokens (special-tokens string)])
@@ -96,8 +95,8 @@
   (define (index-of-matching-paren string place)
     (let loop ([i place]
                [parenlevel 1])
-      (cond [(>= i (string-length string)) #f]
-            [(= parenlevel 0) i]
+      (cond [(= parenlevel 0) i]
+            [(>= i (string-length string)) #f]
             [else (loop (add1 i)
                         (case (string-ref string i)
                           [(#\() (add1 parenlevel)]
@@ -110,19 +109,56 @@
           (index-of-matching-paren string (add1 first-paren))
           #f)))
 
-  (define (code-string->code-tree string)
-    (let loop ([i (index-of-char string #\( 0)])
-      (if i
-          (let ([end (index-of-matching-paren string (add1 i))])
-            (if (and (< i (string-length string)) end)
-                (cons (substring string i end) 
-                      (loop (index-of-char string #\( (add1 end))))
-                '()))
-          '())))
+  (define (code-string->code-tree s)
+    (let ([start (index-of-char s #\()])
+      (if start
+          (let ([end (index-of-matching-paren s (add1 start))])
+            (append
+             (string-split (substring s 0 start) " ")
+             (list (code-string->code-tree
+                    (substring s
+                               (add1 start) 
+                               (sub1 (index-of-matching-paren s (add1 start))))))
+             (if (>= end (string-length s))
+                 '()
+                 (code-string->code-tree (substring s (add1 end))))))
+          (string-split s " "))))
+
+  (define name-gensym (make-gensym-generator))
+  (define loop-gensym (make-gensym-generator "loop_"))
+  (define loop-end-gensym (make-gensym-generator "lend_"))
+  (define function-prelude "\tpushq\t%rbx\n\tmovq\t%rsp, %rbx\n")
+  (define function-postlude "\tmovq\t%rbx, %rsp\n\tpopq\t%rbx\n\tret\n")
+  (define (function-epilogue argcount)
+    (string-append "\taddq\t$" (number->string (* argcount 8)) ", %rsp\n"))
+  (define (function-argument number)
+    (string-append (number->string (+ 16 (* number 8))) "(%rbx)"))
+  (define (function-call name)
+    (string-append "\tcall\t" name "\n"))
+
+  (define (function-argument-push args)
+    (apply string-append 
+           (reverse (map (lambda (arg)
+                           (if (list? arg)
+                               (string-append (function-call-expand arg)
+                                              "\tpushq\t%rax\n")
+                               (string-append "\tpushq\t" arg "\n")))
+                         args))))
+
+  (define (function-call-expand list)
+    (string-append
+     (function-argument-push (cdr list))
+     (function-call (car list))
+     (function-epilogue (length (cdr list)))))
           
   (define (parse-code-string string token)
-    (let ([code (code-string->code-tree string)])
-      code))
+    (let ([code (code-string->code-tree (string-replace (string-replace string "\n" " ") "\t" " "))])
+      (apply string-append
+             (let loop ([c code])
+               (if (null? c)
+                   '()
+                   (cons (function-call-expand (car c))
+                         (loop (cdr c))))))))
   
   (define (parse-inline-string string token)
     string)
@@ -139,8 +175,8 @@
       (close-output-port out)
       (close-input-port in)))
 
-  (define (run)
-    (let ([args (current-command-line-arguments)])
+  ;;when run from command line with two args will run
+  (let ([args (current-command-line-arguments)])
+    (when (= (vector-length args) 2)
       (run-on-file (vector-ref args 0) (vector-ref args 1))))
-  ;;(run)
   )
