@@ -7,7 +7,7 @@
 
 #function simplifyers
 
-16(%rbx) .equ arg0
+#16(%rbx) .equ arg0
 
 #std functions
 .text
