@@ -12,6 +12,22 @@
 #std functions
 .text
 
+#sets (arg1) to arg2
+#.global _set
+#.type _set, @function
+#_set:
+#	movq	8(%rsp), %rax
+#	movq	16(%rsp), (%rax)
+#	ret
+
+#syscalls and quits our program
+.global _exit
+.type _exit, @function
+	movq	%rax, %rdi
+	movq	$60, %rax
+	syscall
+	ret
+
 #adds arg1 and arg2 into rax
 .global _add
 .type _add, @function
@@ -179,7 +195,17 @@ _lend1:
 .global _reverse_bytes
 .type _reverse_bytes, @function
 _reverse_bytes:
+	pushq	%rbx
+	movq	%rsp, %rbx
+	pushq	%rdi #save one index
 	
+
+_loop3:
+	
+_lend3:
+	
+	movq	%rbx, %rsp
+	popq	%rbx
 	ret
 
 #.global _putchar
