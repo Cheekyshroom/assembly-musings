@@ -1,3 +1,11 @@
+.text
+.global _start
+.type _start, @function
+_start:
+	call	_program_insertion
+	call	_exit
+	ret
+
 #std constant definitions and variables
 .data
 	NEWLINE_CHAR: .byte 10
