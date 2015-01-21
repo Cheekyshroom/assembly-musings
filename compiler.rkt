@@ -5,8 +5,7 @@
 ;; as output.s -o output.o
 ;; ld output.o stdlibs.o -o a.out
 ;;
-;; todo: write a gensym function for loops, then inline asm and function call
-;;
+;; to add.. macros, variables and assignment and function definitions
 
 (module compiler racket/base
   (provide (all-defined-out))
@@ -135,6 +134,7 @@
     (string-append (number->string (+ 16 (* number 8))) "(%rbx)"))
   (define (function-call name)
     (string-append "\tcall\t" name "\n"))
+  (define insertion-header ".text\n.global _start\n_start:\n")
 
   (define (function-argument-push args)
     (apply string-append 
@@ -171,7 +171,7 @@
   (define (run-on-file input-filename output-filename)
     (let ([in (open-input-file input-filename)]
           [out (open-output-file output-filename #:exists 'replace)])
-      (write-string (parse-string (port->string in) token-handlers) out)
+      (write-string #|(string-append insertion-header |#(parse-string (port->string in) token-handlers)#|)|# out)
       (close-output-port out)
       (close-input-port in)))
 
