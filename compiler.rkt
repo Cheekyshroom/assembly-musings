@@ -11,6 +11,7 @@
   (provide (all-defined-out))
   (require racket/port)
   (require racket/string)
+  (require racket/pretty)
 
   (define (index-of-char str char (start-index 0))
     (let ([length (string-length str)])
@@ -43,54 +44,6 @@
             (string-append pconc-name (number->string current-value))
           (set! current-value (+ current-value 1))))))
 
-  (define global-token "==>")
-
-  ;;i points to the first # in ##token
-  (define (get-token string i)
-    (list->string 
-     (for/list ([ch (in-string string (+ i (string-length global-token)))]
-                             #:break (or (char=? ch #\newline)
-                                         (char=? ch #\space)))
-                    ch)))
-
-
-  ;;gets a list of the locations of all the 'special tokens' in a string
-  ;;and token data as a string
-  (define (special-tokens string)
-    (let loop ([i (index-of-substring string global-token)])
-      (if i
-          (cons (cons (get-token string i) i) 
-                (loop (index-of-substring string global-token (add1 i))))
-          '())))
-
-  (define (handle-token string token token-handlers)
-    ((hash-ref token-handlers (car token)) string token))
-
-  (define (token-string-start token)
-    (+ (cdr token) (string-length global-token) (string-length (car token))))
-
-  (define (parse-string string token-handlers)
-    (let loop ([tokens (special-tokens string)])
-      (if (null? tokens)
-          ""
-          (string-append
-           (handle-token
-            (substring string
-                       (token-string-start (car tokens))
-                       (if (null? (cdr tokens))
-                           (string-length string)
-                           (cdr (cadr tokens))))
-            (car tokens)
-            token-handlers)
-           (loop (cdr tokens))))))
-
-  ;;parses a code string into a list of (perhaps nested) function calls
-  ;;like
-  ;;(foo 1 2 3)
-  ;;(bar 2)
-  ;;(fi (foo 4 5 6) 10)
-  ;;becomes
-  ;;'((foo 1 2 3) (bar 2) (fi (foo 4 5 6) 10))
   (define (index-of-matching-paren string place)
     (let loop ([i place]
                [parenlevel 1])
@@ -153,12 +106,15 @@
      (function-epilogue (length (cdr list)))))
 
   (define (parse-code syntax-tree)
-    (let ([type (hash-ref special-expansions (if (pair? syntax-tree) (if (pair? (car syntax-tree)) (car (car syntax-tree)) #t) #t) #f)])
-      ;;(write "Doing ")
-      ;;(write type)
-      ;;(newline)
-      ;;(write syntax-tree)
-      ;;(newline)
+    (pretty-print syntax-tree)
+    (newline)
+    (let ([type (hash-ref special-expansions 
+                          (if (pair? syntax-tree) 
+                              (if (pair? (car syntax-tree)) 
+                                  (car (car syntax-tree)) 
+                                  #t)
+                              #t)
+                          #f)])
       (if type
           (type syntax-tree)
           (do-function-applications syntax-tree))))
@@ -171,43 +127,58 @@
                          (cons (function-call-expand (car c))
                                (loop (cdr c)))))))
 
-  (define special-expansions (hash "_defmacro" (lambda (syntax-tree) "#macro output ;)")
-                                   "_defn" (lambda (syntax-tree)
-                                             (write syntax-tree)
-                                             (newline)
-                                             (write (cdr (cdr (car syntax-tree))))
-                                             (newline)
-                                             (string-append (cadr (car syntax-tree)) ":\n" ;;function name label
-                                                            function-prelude
-                                                            ;;(do-function-applications (cdr (cdr (car syntax-tree))))
-                                                            (apply string-append (map (lambda (subtree)
-                                                                                        (parse-code subtree))
-                                                                                      (cdr (cdr (car syntax-tree)))))
-                                                            function-postlude))
-                                   "_inline" (lambda (syntax-tree)
-                                               (let ([final
-                                                      (apply string-append 
-                                                             (map (lambda (line)
-                                                                    (string-append "\t" (string-join line " ") "\n"))
-                                                                  (cdr (car syntax-tree))))])
-                                                 (write final)
-                                                 (newline)
-                                                 final))))
+  (define special-expansions 
+    (hash "_defmacro" (lambda (syntax-tree) "#macro output ;)")
+          "_defn" (lambda (syntax-tree)
+                    (write syntax-tree)
+                    (newline)
+                    (write (cdr (cdr (car syntax-tree))))
+                    (newline)
+                    (string-append (cadr (car syntax-tree)) ":\n" ;;function name label
+                                   function-prelude
+                                   ;;(do-function-applications (cdr (cdr (car syntax-tree))))
+                                   (apply string-append (map (lambda (subtree)
+                                                               (parse-code subtree))
+                                                             (cdr (cdr (car syntax-tree)))))
+                                   function-postlude))
+          "_inline" (lambda (syntax-tree)
+                      (let ([final
+                             (apply string-append 
+                                    (map (lambda (line)
+                                           (string-append "\t" (string-join line " ") "\n"))
+                                         (cdr (car syntax-tree))))])
+                        (write final)
+                        (newline)
+                        final))))
 
+  (define (clean-string-of-spaces-properly string)
+    (list->string
+     (let loop ([i 0]
+                [mode 'normal]);;(string-length string)]
+       (if (= i (string-length string)) ;;if at the end
+           '()
+           (let ([char (string-ref string i)])
+             (if (char=? char #\") ;;if we've encountered an end-quote or begin-quote
+                 (cons char (loop (add1 i) (if (eq? mode 'quoted) 'normal 'quoted)))
+                 (if (eq? mode 'quoted)
+                     (cons char (loop (add1 i) 'quoted))
+                     (if (char=? char #\space) ;;if we've hit a space or a string of spaces
+                         (if (eq? mode 'already-spaced)
+                             (loop (add1 i) 'already-spaced)
+                             (cons char (loop (add1 i) 'already-spaced)))
+                         (cons char (loop (add1 i) 'normal))))))))))
 
-  (define (parse-code-string string token)
-    (let ([code (code-string->code-tree (string-replace (string-replace string "\n" " ") "\t" " "))])
+  (define (clean-string string)
+    (clean-string-of-spaces-properly (string-replace (string-replace string "\n" " ") "\t" " ")))
+                                           
+  (define (parse-code-string string)
+    (let ([code (code-string->code-tree (clean-string string))])
       (parse-code code)))
-
-  (define token-handlers
-    (hash "inline" (lambda (string token) string)
-          "code" parse-code-string
-          "comment" (lambda (string token) "")))
 
   (define (run-on-file input-filename output-filename)
     (let ([in (open-input-file input-filename)]
           [out (open-output-file output-filename #:exists 'replace)])
-      (write-string (parse-string (port->string in) token-handlers) out)
+      (write-string (parse-code-string (port->string in)) out)
       (close-output-port out)
       (close-input-port in)))
 
