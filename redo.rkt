@@ -146,7 +146,11 @@
                    function-epilogue))
 
   (define (inline-creation-expand tree)
-    "")
+    (apply string-append
+           (map (lambda (line)
+                  (string-append "\t" (string-join line " ") "\n"))
+
+                (cdr tree))))
 
   (define (loop-creation-expand tree)
     "")
