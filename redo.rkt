@@ -132,10 +132,10 @@
      (function-call (car tree))
      (function-argument-cleanup (length (cdr tree)))))
 
-  (define (macro-creation-expand tree)
+  (define (macro-creation-expand tree arg-environment)
     "")
 
-  (define (function-creation-expand tree)
+  (define (function-creation-expand tree arg-environment)
     (string-append (function-globalize-name (cadr tree)) ;;.global fn.. etc
                    (cadr tree) ":\n" ;;function name label
                    function-prologue
@@ -145,7 +145,7 @@
                                (cdr (cdr (cdr tree)))))
                    function-epilogue))
 
-  (define (inline-creation-expand tree)
+  (define (inline-creation-expand tree arg-environment)
     ;;(printf "Doing inlining~%")
     (apply string-append
            (map (lambda (line)
@@ -153,20 +153,47 @@
 
                 (cdr tree))))
 
-  (define (loop-creation-expand tree)
+  (define (loop-creation-expand tree arg-environment)
     "")
+
+  ;;'(if condition (first branch bits) (second branch bits))
+  ;;into
+  ;;(run-condition)
+  ;;cmpq %rax, $0 ;;compare return value to 0
+  ;;je _loop_else_gensym
+  ;;(first branch code)
+  ;;jmp _loop_finish_gensym
+  ;;_loop_else_gensym:
+  ;;(second branch code)
+  ;;_loop_finish_gensym
+  ;;done!
+  
+  (define if-else-gensym (make-gensym-generator "if_else_"))
+  (define if-finish-gensym (make-gensym-generator "if_finish_"))
+  (define (if-creation-expand tree arg-environment)
+    (let ([else-label (if-else-gensym)]
+          [finish-label (if-finish-gensym)])
+      (string-append (parse-code (cadr tree) arg-environment) ;;the condition
+                     "\tcmpq\t$0,\t%rax\n"
+                     "\tjne \t" else-label "\n"
+                     (parse-code (caddr tree) arg-environment)
+                     "\tjmp\t" finish-label "\n"
+                     else-label ":\n"
+                     (parse-code (cadddr tree) arg-environment)
+                     finish-label ":\n")))
 
   (define special-tokens 
     (hash "_macro" macro-creation-expand
           "_function" function-creation-expand
           "_inline" inline-creation-expand
           "_loop" loop-creation-expand
+          "_if" if-creation-expand
           "_comment" (lambda (tree) "")))
 
   (define (subparse tree arg-environment)
     (let ([special (hash-ref special-tokens (car tree) #f)])
       (if special
-          (special tree)
+          (special tree arg-environment)
           (function-application-expand tree arg-environment))))
     
   (define (parse-code tree (arg-environment '()))
