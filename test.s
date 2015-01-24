@@ -13,7 +13,7 @@
 	(_print_string (_add (_mul number $6) $string0))
 	(_print_newline))
 
-(_function _main__ ()
+(_function _main_ ()
 	(_inline 
 		(movq	$5, %rsi)
 		(_loop_start:))
