@@ -9,7 +9,7 @@
 
 (_function _main_ ()
 	(_inline 
-		(movq	$5, %rsi)
+		(movq	$6, %rsi)
 		(_loop_start:))
 	(_print_string_by_number %rsi)
 	(_inline
