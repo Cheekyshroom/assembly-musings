@@ -111,9 +111,6 @@
              (loop (cdr c) (add1 i))])))
 
   (define (function-argument-push args variable-names)
-    (printf "Function-argument-push~%")
-    (pretty-print args)
-    (pretty-print variable-names)
     (apply
      string-append
      (reverse
@@ -149,7 +146,7 @@
                    function-epilogue))
 
   (define (inline-creation-expand tree)
-    (printf "Doing inlining~%")
+    ;;(printf "Doing inlining~%")
     (apply string-append
            (map (lambda (line)
                   (string-append "\t" (string-join line " ") "\n"))
@@ -166,21 +163,23 @@
           "_loop" loop-creation-expand
           "_comment" (lambda (tree) "")))
 
+  (define (subparse tree arg-environment)
+    (let ([special (hash-ref special-tokens (car tree) #f)])
+      (if special
+          (special tree)
+          (function-application-expand tree arg-environment))))
+    
   (define (parse-code tree (arg-environment '()))
-    (printf "Parse-Code~%")
-    (pretty-print tree)
     (if (list? tree)
-        (apply
-         string-append
-         (for/list ([subtree (in-list tree)])
-           (if (pair? subtree)
-               (let ([special (hash-ref special-tokens (car subtree) #f)])
-                 (if special
-                     (special subtree) ;;if it's a special token
-                     ;;if it's a funcall
-                     (function-application-expand subtree arg-environment)))
-               (begin (printf "NOTALIST~%") (pretty-print subtree) (printf "DONE~%") ""))))
-        "****NOTLIST*****"))
+        (if (list? (car tree))
+            (apply
+             string-append
+             (for/list ([subtree (in-list tree)])
+               (if (pair? subtree)
+                   (subparse subtree arg-environment)
+                   "")))
+            (subparse tree arg-environment))
+        ""))
 
   (define (parse-code-string string)
     (let ([code (code-string->code-tree (clean-string string))])
