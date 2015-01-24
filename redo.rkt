@@ -81,9 +81,6 @@
 
 
 
-  (define (do-function-applications tree)
-    (format "FUNCTION_APPLICATION ~a  ~%" tree))
-
   (define (make-gensym-generator (pconc-name "sym_"))
     (let ([current-value 0])
       (lambda ()
@@ -116,8 +113,12 @@
      (reverse
       (map (lambda (arg)
              (if (list? arg)
-                 (string-append (function-application-expand arg variable-names)
-                                "\tpushq\t%rax\n")
+                 (if (string=? (car arg) "_ref") ;;if we're dereferencing
+                     (string-append (reference-creation-expand arg variable-names)
+                                    "\tpushq\t%rax\n")
+                     (string-append
+                      (function-application-expand arg variable-names)
+                      "\tpushq\t%rax\n"))
                  (let ([var (index-of-binding variable-names arg)])
                    (if var ;;if it matches a variable name
                        (string-append "\tpushq\t" (function-argument var) "\n")
@@ -146,7 +147,6 @@
                    function-epilogue))
 
   (define (inline-creation-expand tree arg-environment)
-    ;;(printf "Doing inlining~%")
     (apply string-append
            (map (lambda (line)
                   (string-append "\t" (string-join line " ") "\n"))
@@ -159,13 +159,13 @@
   ;;'(if condition (first branch bits) (second branch bits))
   ;;into
   ;;(run-condition)
-  ;;cmpq %rax, $0 ;;compare return value to 0
-  ;;je _loop_else_gensym
+  ;;cmpq $0, %rax ;;compare return value to 0
+  ;;je _else_gensym
   ;;(first branch code)
-  ;;jmp _loop_finish_gensym
-  ;;_loop_else_gensym:
+  ;;jmp _finish_gensym
+  ;;_else_gensym:
   ;;(second branch code)
-  ;;_loop_finish_gensym
+  ;;_finish_gensym
   ;;done!
   
   (define if-else-gensym (make-gensym-generator "if_else_"))
@@ -182,11 +182,21 @@
                      (parse-code (cadddr tree) arg-environment)
                      finish-label ":\n")))
 
+  (define (reference-creation-expand tree arg-environment)
+    (let ([which (index-of-binding arg-environment (cadr tree))])
+      (if which
+          (string-append
+           "\tleaq\t" (function-argument which) ",\t%rax\n")
+          (error (format "Variable binding ~a not found in ~a." 
+                         (cadr tree) 
+                         arg-environment)))))
+
   (define special-tokens 
-    (hash "_macro" macro-creation-expand
-          "_function" function-creation-expand
+    (hash "_function" function-creation-expand
           "_inline" inline-creation-expand
+          "_macro" macro-creation-expand
           "_loop" loop-creation-expand
+          ;;"_ref" reference-creation-expand
           "_if" if-creation-expand
           "_comment" (lambda (tree) "")))
 
