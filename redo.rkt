@@ -142,7 +142,7 @@
                    function-prologue
                    (apply string-append
                           (map (lambda (subtree)
-                                 (parse-code subtree (caddr tree)))
+                                 (parse-code subtree (caddr tree))) 
                                (cdr (cdr (cdr tree)))))
                    function-epilogue))
 
@@ -150,7 +150,6 @@
     (apply string-append
            (map (lambda (line)
                   (string-append "\t" (string-join line " ") "\n"))
-
                 (cdr tree))))
 
   (define (loop-creation-expand tree arg-environment)
@@ -198,7 +197,7 @@
           "_loop" loop-creation-expand
           ;;"_ref" reference-creation-expand
           "_if" if-creation-expand
-          "_comment" (lambda (tree) "")))
+          "_comment" (lambda (tree environment) "")))
 
   (define (subparse tree arg-environment)
     (let ([special (hash-ref special-tokens (car tree) #f)])
