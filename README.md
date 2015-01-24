@@ -68,9 +68,9 @@ and happily run your very own program!
 
 (_comment If 4 == 4 this will return 10, else print "Whoops" and return 20
 (_if (_equal $4 $4)
-	((_identity $10))
-	((_print_string $msg)
-    (_identity $20)))
+  ((_identity $10))
+  ((_print_string $msg)
+   (_identity $20)))
 ```
 #####Nested function application
 ```Assembly
