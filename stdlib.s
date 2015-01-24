@@ -13,23 +13,9 @@ _start:
 .global NEWLINE_CHAR
 .global NULL_CHAR
 
-#function simplifyers
-
-#16(%rbx) .equ arg0
 
 #std functions
 .text
-
-#sets (arg1) to arg2
-.global _set
-.type _set, @function
-_set:
-	pushq %rsi
-	movq	16(%rsp), %rsi
-	movq	8(%rsp), %rax
-	movq	%rsi, (%rax)
-	popq	%rsi
-	ret
 
 #syscalls and quits our program
 .global _exit__
@@ -80,7 +66,6 @@ _div:
 	popq	%rbx
 	ret
 
-
 #divides arg1 by arg2 and puts remainder in rax
 .global _mod
 .type _mod, @function
@@ -98,11 +83,6 @@ _mod:
 	movq	%rbx, %rsp
 	popq	%rbx
 	ret
-
-#.global _move
-#.type _move, @function
-#moves memory1 into memory 2
-#_move:
 
 #prints a single newline char
 .global _print_newline
@@ -176,16 +156,6 @@ _print_byte:
 	popq	%rbx
 	ret
 
-#(define (n->l i)
-#	   (let ([out (make-string 20 #\space)])
-#	     (let loop ([i i]
-#			[index 0])
-#	       (unless (<= i 0)
-#		 (string-set! out index (integer->char (+ 48 (modulo i 10))))
-#		 (loop (floor (/ i 10)) (+ index 1))))
-#	     out))
-
-
 #converts its first argument (a quadword) to a decimal string
 #arg1 contains the quadword, and arg2 the address of a string in which
 #to put the word
@@ -213,43 +183,6 @@ _lend1:
 	movq	%rbx, %rsp
 	pushq	%rbx
 	ret
-
-.global _reverse_bytes
-.type _reverse_bytes, @function
-_reverse_bytes:
-	pushq	%rbx
-	movq	%rsp, %rbx
-	pushq	%rdi #save one index
-	
-
-_loop3:
-	
-_lend3:
-	
-	movq	%rbx, %rsp
-	popq	%rbx
-	ret
-
-#.global _putchar
-#.type _putchar, @function
-#.data
-#	_putchar_tmp_slot: .byte 0
-#.text
-#_putchar:
-#	pushq	%rbx
-#	movq	%rsp,	%rbx
-#	push	%rdi #save rdi
-#
-#	movb	9(%rbx), %dil #$_putchar_tmp_slot
-#	movb	%dil,	_putchar_tmp_slot
-#	pushq $_putchar_tmp_slot
-#	call	_print_byte
-#	#addq	$8, %rsp
-#
-#	movq	-8(%rbx), %rdi
-#	movq	%rbx,	%rsp
-#	popq	%rbx
-#	ret
 
 #reads a string of maximum length arg2 into addr arg1 and following
 #returns length of string read
@@ -361,12 +294,3 @@ _char_at:
 	movq	24(%rsp), %r13
 	movb	(%r12,%r13,1), %al
 	ret
-
-.global _if
-.type _if, @function
-
-
-#gets an amount of memory and returns an addr on the stack with that much above it
-.global _allocate_memory
-.type _allocate_memory, @function
-	
