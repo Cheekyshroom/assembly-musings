@@ -2,8 +2,8 @@
 .global _start
 .type _start, @function
 _start:
-	call	_program_insertion
-	call	_exit
+	call	_main__
+	call	_exit__
 	ret
 
 #std constant definitions and variables
@@ -32,9 +32,9 @@ _set:
 	ret
 
 #syscalls and quits our program
-.global _exit_program
-.type _exit_program, @function
-_exit_program:
+.global _exit__
+.type _exit__, @function
+_exit__:
 	movq	%rax, %rdi
 	movq	$60, %rax
 	syscall
@@ -44,8 +44,8 @@ _exit_program:
 .global _add
 .type _add, @function
 _add:
-	movq	8(%rsp), %rax #arg1->rax
-	addq	16(%rsp), %rax #arg2+rax->rax
+	movq	16(%rsp), %rax #arg1->rax
+	addq	8(%rsp), %rax #arg2+rax->rax
 	ret
 #subtracts arg2 from arg1 into rax
 .global _sub
@@ -54,6 +54,15 @@ _sub:
 	movq	8(%rsp), %rax
 	subq	16(%rsp), %rax
 	ret
+
+#multiplies arg1 by arg2 into rax
+.global _mul
+.type _mul, @function
+_mul:
+	movq	8(%rsp), %rax
+	imulq	16(%rsp), %rax
+	ret
+
 #divides arg1 by arg2 into rax
 .global _div
 .type _div, @function
@@ -70,6 +79,7 @@ _div:
 	movq	%rbx, %rsp
 	popq	%rbx
 	ret
+
 
 #divides arg1 by arg2 and puts remainder in rax
 .global _mod
