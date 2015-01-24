@@ -9,7 +9,7 @@
 	(string6: .ascii "Six  \0")
 	(.text))
 
-(_function _print_string_by_number (number oo bar xxx)
+(_function _print_string_by_number (number)
 	(_print_string (_add (_mul number $6) $string0))
 	(_print_newline))
 
