@@ -24,7 +24,9 @@ Create a program in a similar form to this.
 #A function that prints our message several times (infinitely :^))
 (_function _user_defined_function (times message)
   (_print_string message)
-  (_user_defined_function times message))
+  (_if (_equal times $0)
+    ((_user_defined_function (_sub times $1) message))
+    ((_identity $0))))
   
 ```
 
