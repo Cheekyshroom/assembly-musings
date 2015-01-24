@@ -20,7 +20,7 @@ _start:
 #syscalls and quits our program
 .global _exit_
 .type _exit_, @function
-_exit__:
+_exit_:
 	movq	%rax, %rdi
 	movq	$60, %rax
 	syscall
