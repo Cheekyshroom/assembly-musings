@@ -21,16 +21,20 @@ _start:
 .text
 
 #sets (arg1) to arg2
-#.global _set
-#.type _set, @function
-#_set:
-#	movq	8(%rsp), %rax
-#	movq	16(%rsp), (%rax)
-#	ret
+.global _set
+.type _set, @function
+_set:
+	pushq %rsi
+	movq	16(%rsp), %rsi
+	movq	8(%rsp), %rax
+	movq	%rsi, (%rax)
+	popq	%rsi
+	ret
 
 #syscalls and quits our program
-.global _exit
-.type _exit, @function
+.global _exit_program
+.type _exit_program, @function
+_exit_program:
 	movq	%rax, %rdi
 	movq	$60, %rax
 	syscall
