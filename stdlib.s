@@ -290,7 +290,43 @@ _string_compare_exit:
 .global _char_at
 .type _char_at, @function
 _char_at:
-	movq	16(%rsp), %r12
-	movq	24(%rsp), %r13
+	movq	8(%rsp), %r12
+	movq	16(%rsp), %r13
 	movb	(%r12,%r13,1), %al
+	ret
+
+.global _identity
+.type _identity, @function
+_identity:
+	movq	8(%rsp), %rax
+	ret
+
+.global _equal
+.type _equal, @function
+_equal:
+	movq	8(%rsp), %rax
+	subq	16(%rsp), %rax
+	ret
+
+.global _deref
+.type _deref, @function
+_deref:
+	movq 8(%rsp), %rax
+	movq	(%rax), %rax
+	ret
+
+.global _set
+.type _set, @function
+_set:
+	pushq %rbx
+	movq	%rsp, %rbx
+	pushq	%rdi
+
+	movq	16(%rbx), %rax
+	movq	24(%rbx), %rdi
+	movq	%rdi, (%rax)
+
+	movq	-8(%rbx), %rdi
+	movq	%rbx, %rsp
+	popq	%rbx
 	ret
