@@ -19,10 +19,11 @@ Create a program in a similar form to this.
   (_comment Function call to one defined in our standard library.)
   (_print_string $welcome)
   (_user_defined_function $10 $buffer)
-  (_comment Nested function calls are nice too, this one gets returned as it's the last call in a function.)
+  (_comment Nested function calls are nice too
+     this one gets returned as it's the last call in a function.)
   (_add $20 (_sub $5 (_mul $2 $3))))
 
-(_comment A function that prints our message several times (infinitely :^))
+(_comment A function that prints a message as many times as desired)
 (_function _user_defined_function (times message)
   (_print_string message)
   (_if (_equal times $0)
