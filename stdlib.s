@@ -2,8 +2,8 @@
 .global _start
 .type _start, @function
 _start:
-	call	_main__
-	call	_exit__
+	call	_main_
+	call	_exit_
 	ret
 
 #std constant definitions and variables
@@ -18,8 +18,8 @@ _start:
 .text
 
 #syscalls and quits our program
-.global _exit__
-.type _exit__, @function
+.global _exit_
+.type _exit_, @function
 _exit__:
 	movq	%rax, %rdi
 	movq	$60, %rax
