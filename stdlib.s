@@ -104,7 +104,7 @@ _write_string:
 	movq	16(%rbx),	%rsi
 	movq	24(%rbx), %rdx
 	movq	$1,	%rax
-	movq	$1,	%rdi
+	movq	32(%rbx),	%rdi
 	syscall
 	#load saved regs back
 	movq	-8(%rbx), %rdi
@@ -115,7 +115,7 @@ _write_string:
 	pop	%rbx
 	ret
 
-#writes the string at addr arg1 to stdout (null terminated)
+#writes the string at addr arg1 to some file descriptor
 .global _print_string
 .type _print_string, @function
 _print_string:
@@ -123,12 +123,13 @@ _print_string:
 	movq	%rsp,	%rbx #save rsp
 	
 	#our arg to this fn is already on the stack in the right place
-	push	16(%rbx)
+	pushq	16(%rbx)
 	call	_string_length
 	addq	$8, %rsp
 
-	push	%rax #arg2 to _write_string
-	push	16(%rbx) #addr of string
+	pushq	24(%rbx)
+	pushq	%rax #arg2 to _write_string
+	pushq	16(%rbx) #addr of string
 	call	_write_string
 	addq	$16, %rsp
 
@@ -136,19 +137,58 @@ _print_string:
 	pop	%rbx
 	ret
 
-#prints a byte at addr arg1
+#prints a byte at addr arg1 to some descriptor arg2
 .global _print_byte
 .type _print_byte, @function
 _print_byte:
 	pushq	%rbx
 	movq	%rsp,	%rbx
 	#call _write_string on a string of length 1
+	pushq	24(%rbx)
 	pushq	$1
 	pushq	16(%rbx)
 	call	_write_string
 	#addq	$16,	%rsp
 
 	movq	%rbx,	%rsp
+	popq	%rbx
+	ret
+
+.global _open_file
+.type _open_file, @function
+_open_file:
+	pushq	%rbx
+	movq	%rsp, %rbx
+	pushq	%rdi
+	pushq	%rsi
+	pushq	%rdx
+
+	movq	16(%rbx), %rdi
+	movq	24(%rbx), %rsi
+	movq	32(%rbx), %rdx
+	movq	$2, %rax
+	syscall
+
+	movq	-8(%rbx), %rdi
+	movq	-16(%rbx), %rsi
+	movq	-24(%rbx), %rdx
+	movq	%rbx, %rsp
+	popq	%rbx
+	ret
+
+.global _close_file
+.type _close_file, @function
+_close_file:
+	pushq	%rbx
+	movq	%rsp, %rbx
+	pushq	%rdi
+
+	movq	16(%rbx), %rdi
+	movq	$3, %rax
+	syscall
+
+	movq	-8(%rbx), %rdi
+	movq	%rbx, %rsp
 	popq	%rbx
 	ret
 
@@ -363,4 +403,63 @@ _set:
 	movq	-8(%rbx), %rdi
 	movq	%rbx, %rsp
 	popq	%rbx
+	ret
+
+.global _system_call
+.type _system_call, @function
+_system_call:
+	pushq %rbx
+	movq	%rsp, %rbx
+	pushq	%rdi
+	pushq	%rsi
+	pushq	%rdx
+	pushq	%r10
+	pushq	%r8
+	pushq	%r9
+
+	movq 	16(%rbx), %rax
+	movq	24(%rbx), %rdi
+	movq	32(%rbx), %rsi
+	movq	40(%rbx), %rdx
+	movq	48(%rbx), %r10
+	movq	56(%rbx), %r8
+	movq	64(%rbx), %r9
+	syscall
+
+	movq	-8(%rbx), %rdi
+	movq	-16(%rbx), %rsi
+	movq	-24(%rbx), %rdx
+	movq	-32(%rbx), %r10
+	movq	-40(%rbx), %r8
+	movq	-48(%rbx), %r9
+	movq	%rbx, %rsp
+	popq	%rbx
+	ret
+
+.global _xor
+.type _xor, @function
+_xor:
+	movq	8(%rsp), %rax
+	xorq	16(%rsp), %rax
+	ret
+
+.global _and
+.type _and, @function
+_and:
+	movq	8(%rsp), %rax
+	andq	16(%rsp), %rax
+	ret
+
+.global _or
+.type _or, @function
+_or:
+	movq	8(%rsp), %rax
+	orq	16(%rsp), %rax
+	ret
+
+.global _not
+.type _not, @function
+_not:
+	movq	8(%rsp), %rax
+	notq	%rax
 	ret
