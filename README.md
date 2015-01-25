@@ -89,7 +89,6 @@ and happily run your very own program!
 ```
 #####A quick tutorial!:
 ```Assembly
-
 (_comment Currently data labels must be inlined.)
 (_inline (.data) (string: .ascii "They're equal!\n\0") (.text))
 
@@ -107,8 +106,8 @@ and happily run your very own program!
 #####Arithmetic operators
 Addition, subtraction, division, multiplication, and modulus implemented with the `_add`, `_sub`, `_div`, `_mul`, `_mod` functions respectively
 ```Assembly
-(_add $2 3)
-(_mul $100 $3)
+(_add $2 3) ==> 6
+(_mul $100 $3) ==> 300
 ```
 #####String operations:
 ######Strings can be compared with `_string_compare`:
@@ -129,18 +128,23 @@ Addition, subtraction, division, multiplication, and modulus implemented with th
 ######You can find their length with `_string_length`:
 ```Assembly
 (_inline (.data) (string: .ascii "Hello\n\0") (.text))
-(_string_length $string)
+(_string_length $string) ==> 6
 ```
 #####Other notable functions include:
 ######`_identity`, which returns its argument:
 ```Assembly
-(_identity $10)
-(_identity $300)
+(_identity $10) ==> 10
+(_identity $300) ==> 300
 ```
-######`_equal`,which returns true (0) on equality of arguments and another number on inequality:
+######`_equal_to`,which returns true (0) on equality of arguments and another number on inequality:
 ```Assembly
-(_equal $1 $1)
-(_equal $-1 $500)
+(_equal_to $1 $1) ==> true
+(_equal_to $-1 $500) ==> false
+```
+######`_less_than` and `_greater_than`, which are self explanatory:
+```Assembly
+(_less_than $10 $20) ==> true
+(_greater_than $5 $30) ==> true
 ```
 ######`_exit_`, which kills the program at any specified point:
 ```Assembly
