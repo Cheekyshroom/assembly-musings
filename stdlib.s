@@ -155,6 +155,16 @@ _print_byte:
 	popq	%rbx
 	ret
 
+#_or these flags together as the second argument to _open_file to 
+#get the desired result
+#$0666 is a pretty good mode flag (third arg) though
+#$0	#, rdonly
+#$1	#, wronly
+#$2	#, rdwr
+#$1024	#, append
+#$512	#, trunc
+#$64	#, creat
+#$128	#, excl
 .global _open_file
 .type _open_file, @function
 _open_file:
