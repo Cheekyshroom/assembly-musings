@@ -103,3 +103,53 @@ and happily run your very own program!
     ((_print_string output_string))
     ((_identity $1)))))
 ```
+####Functions provided in the standard library:
+#####Arithmetic operators
+Addition, subtraction, division, multiplication, and modulus implemented with the `_add`, `_sub`, `_div`, `_mul`, `_mod` functions respectively
+```Assembly
+(_add $2 3)
+(_mul $100 $3)
+```
+#####String operations:
+######Strings can be compared with `_string_compare`:
+```Assembly
+(_inline (.data) (string1: .ascii "Hello\0") (string2: .ascii "Foobar!\0"))
+(_string_compare $string1 $string2) (_comment Will obviously return false)
+```
+######Read from stdin with `_read_string` or `_read_terminate_string`:
+```Assembly
+(_inline (.bss) (.lcomm input_buffer, 512) (.text)) (_comment A 512 byte input buffer)
+(_read_terminate_string $input_buffer $512)
+```
+######Printed to stdout with `_print_string` or `_write_string`, or as bytes individually with `_print_byte`:
+```Assembly
+(_inline (.data) (string: .ascii "Hello\n\0") (.text))
+(_print_string $string)
+```
+######You can find their length with `_string_length`:
+```Assembly
+(_inline (.data) (string: .ascii "Hello\n\0") (.text))
+(_string_length $string)
+```
+#####Other notable functions include:
+######`_identity`, which returns its argument:
+```Assembly
+(_identity $10)
+(_identity $300)
+```
+######`_equal`,which returns true (0) on equality of arguments and another number on inequality:
+```Assembly
+(_equal $1 $1)
+(_equal $-1 $500)
+```
+######`_exit_`, which kills the program at any specified point:
+```Assembly
+(_exit_)
+```
+######And `_set`, which sets the memory location at its first argument to its second:
+```Assembly
+(_function foo (variable)
+	(_set (_ref variable) (_add variable $20)))
+```
+
+###That's pretty much it so far, look forward to TCO, loops, and various other fun things soon enough!
