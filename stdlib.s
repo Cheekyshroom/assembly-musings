@@ -1,9 +1,23 @@
 #std constant definitions and variables
 .global NEWLINE_CHAR
 .global NULL_CHAR
+.global RDONLY
+.global WRONLY
+.global RDWR
+.global APPND
+.global TRUNC
+.global CREAT
+.global EXCL
 .data
 	NEWLINE_CHAR: .byte 10
 	NULL_CHAR: .byte 0
+	RDONLY: .quad 0
+	WRONLY: .quad 1
+	RDWR: .quad 2
+	APPND: .quad 1024
+	TRUNC: .quad 512
+	CREAT: .quad 64
+	EXCL: .quad 128
 .text
 
 .global _start
@@ -274,6 +288,26 @@ _read_terminate_string:
 	call	_read_string #string length now in %rax
 	addq	$24, %rsp
 	movq	$0, (%rdi,%rax,1) #null terminate it
+	
+	movq	-8(%rbx), %rdi #restore rdi
+	movq	%rbx,	%rsp
+	popq	%rbx
+	ret
+
+.global _read_denewline_string
+.type _read_denewline_string, @function
+_read_denewline_string:
+	pushq	%rbx
+	movq	%rsp,	%rbx
+	pushq	%rdi #save rdi
+	movq	16(%rbx), %rdi
+
+	pushq	32(%rbx)
+	pushq	24(%rbx)
+	pushq	%rdi
+	call	_read_string #string length now in %rax
+	addq	$24, %rsp
+	movq	$0, -1(%rdi,%rax,1) #null terminate it
 	
 	movq	-8(%rbx), %rdi #restore rdi
 	movq	%rbx,	%rsp
