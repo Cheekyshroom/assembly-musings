@@ -301,11 +301,49 @@ _identity:
 	movq	8(%rsp), %rax
 	ret
 
-.global _equal
-.type _equal, @function
-_equal:
+.global _equal_to
+.type _equal_to, @function
+_equal_to:
 	movq	8(%rsp), %rax
 	subq	16(%rsp), %rax
+	ret
+
+.global _greater_than
+.type _greater_than, @function
+_greater_than:
+	pushq %rbx
+	movq	%rsp, %rbx
+	pushq	%rdi
+
+	movq	16(%rbx), %rax
+	cmpq	24(%rbx), %rax
+	movq	$1, %rdi
+	cmovlq %rdi, %rax
+	movq	$0, %rdi
+	cmovgq %rdi, %rax
+
+	movq	-8(%rbx), %rdi
+	movq	%rbx, %rsp
+	popq	%rbx
+	ret
+
+.global _less_than
+.type _less_than, @function
+_less_than:
+	pushq %rbx
+	movq	%rsp, %rbx
+	pushq	%rdi
+
+	movq	16(%rbx), %rax
+	cmpq	24(%rbx), %rax
+	movq	$1, %rdi
+	cmovgq %rdi, %rax
+	movq	$0, %rdi
+	cmovlq %rdi, %rax
+
+	movq	-8(%rbx), %rdi
+	movq	%rbx, %rsp
+	popq	%rbx
 	ret
 
 .global _deref
