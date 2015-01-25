@@ -8,7 +8,7 @@
 	(_print_newline))
 
 (_function _print_strings (i)
-	(_if (_equal i $0)
+	(_if (_equal_to i $0)
 		((_identity i))
 		((_print_string_by_number i)
 		 (_print_strings (_sub i $1)))))
