@@ -1,21 +1,17 @@
+#std constant definitions and variables
+.global NEWLINE_CHAR
+.global NULL_CHAR
+.data
+	NEWLINE_CHAR: .byte 10
+	NULL_CHAR: .byte 0
 .text
+
 .global _start
 .type _start, @function
 _start:
 	call	_main_
 	call	_exit_
 	ret
-
-#std constant definitions and variables
-.data
-	NEWLINE_CHAR: .byte 10
-	NULL_CHAR: .byte 0
-.global NEWLINE_CHAR
-.global NULL_CHAR
-
-
-#std functions
-.text
 
 #syscalls and quits our program
 .global _exit_
