@@ -84,10 +84,11 @@ _mod:
 .global _print_newline
 .type _print_newline, @function
 _print_newline:
+	pushq	$0
 	pushq	$1 #length
 	pushq	$NEWLINE_CHAR
 	call	_write_string
-	addq	$16, %rsp
+	addq	$24, %rsp
 	ret
 
 #writes a string at addr arg1 of length arg2 to stdout
@@ -131,7 +132,7 @@ _print_string:
 	pushq	%rax #arg2 to _write_string
 	pushq	16(%rbx) #addr of string
 	call	_write_string
-	addq	$16, %rsp
+	addq	$24, %rsp
 
 	movq	%rbx,	%rsp
 	pop	%rbx
@@ -148,7 +149,7 @@ _print_byte:
 	pushq	$1
 	pushq	16(%rbx)
 	call	_write_string
-	#addq	$16,	%rsp
+	addq	$24,	%rsp
 
 	movq	%rbx,	%rsp
 	popq	%rbx
@@ -234,7 +235,7 @@ _read_string:
 
 	#call the read syscall
 	movq	$0, %rax #sys_read
-	movq	$0, %rdi #from stdin
+	movq	32(%rbx), %rdi #from stdin
 	movq	16(%rbx), %rsi #the addr to read into
 	movq	24(%rbx), %rdx #the max length
 	syscall
@@ -257,10 +258,11 @@ _read_terminate_string:
 	pushq	%rdi #save rdi
 	movq	16(%rbx), %rdi
 
+	pushq	32(%rbx)
 	pushq	24(%rbx)
 	pushq	%rdi
 	call	_read_string #string length now in %rax
-	addq	$8, %rsp
+	addq	$24, %rsp
 	movq	$0, (%rdi,%rax,1) #null terminate it
 	
 	movq	-8(%rbx), %rdi #restore rdi
