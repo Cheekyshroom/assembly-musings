@@ -1,12 +1,13 @@
 (_inline 
 	(.data) 
-		(buf: .ascii "Hello\n\0") 
-		(filename: .ascii "barbaz.txt\0")
+		(buf: .ascii "Hello\n\0")
+		(filename: .ascii "                                 \0")
 		(ERROR: .ascii "File not able to be created\n\0")
+		(WELCM: .ascii "Enter a filename:\n\0")
 	(.text))
 
 (_function onfile (name fd)
-	(_set (_ref fd) (_open_file name (_or $2 (_or $1024 $64)) $0666))
+	(_set (_ref fd) (_open_file name (_or (_deref $RDWR) (_or (_deref $CREAT) (_deref $APPND))) $0666))
 	(_if (_equal_to fd $-1)
 		((_print_string $ERROR $1)
 		 (_exit_))
@@ -14,4 +15,6 @@
 		 (_close_file fd))))
 	
 (_function _main_ ()
+	(_print_string $WELCM $1)
+	(_read_denewline_string $filename (_string_length $filename) $0)
 	(onfile $filename $0))
