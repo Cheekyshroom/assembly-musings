@@ -8,6 +8,8 @@
 .global TRUNC
 .global CREAT
 .global EXCL
+.global STDIN
+.global STDOUT
 .data
 	NEWLINE_CHAR: .byte 10
 	NULL_CHAR: .byte 0
@@ -18,6 +20,8 @@
 	TRUNC: .quad 512
 	CREAT: .quad 64
 	EXCL: .quad 128
+	STDIN: .quad 0
+	STDOUT: .quad 1
 .text
 
 .global _start
@@ -98,14 +102,14 @@ _mod:
 .global _print_newline
 .type _print_newline, @function
 _print_newline:
-	pushq	$0
+	pushq	8(%rsp)
 	pushq	$1 #length
 	pushq	$NEWLINE_CHAR
 	call	_write_string
 	addq	$24, %rsp
 	ret
 
-#writes a string at addr arg1 of length arg2 to stdout
+#writes a string at addr arg1 of length arg2 to fd arg3
 .global _write_string
 .type _write_string, @function
 _write_string:
