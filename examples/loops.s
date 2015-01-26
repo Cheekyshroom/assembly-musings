@@ -1,3 +1,5 @@
+(_comment counts down from 10 to 0)
+
 (_inline (.data) (mes: .ascii "Helloooo\n\0") (.text))
 (_inline (.data) (digits: .ascii "0123456789\0") (.text))
 
