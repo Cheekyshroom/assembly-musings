@@ -152,9 +152,6 @@
                   (string-append "\t" (string-join line " ") "\n"))
                 (cdr tree))))
 
-  (define (loop-creation-expand tree arg-environment)
-    "")
-
   ;;'(if condition (first branch bits) (second branch bits))
   ;;into
   ;;(run-condition)
@@ -180,6 +177,20 @@
                      else-label ":\n"
                      (parse-code (cadddr tree) arg-environment)
                      finish-label ":\n")))
+
+  ;;'(_loop condition (body body2 (body3 1 2 3 4) body4))
+  (define loop-start-gensym (make-gensym-generator "loop_start_"))
+  (define loop-end-gensym (make-gensym-generator "loop_end_"))
+  (define (loop-creation-expand tree arg-environment)
+    (let ([start-label (loop-start-gensym)]
+          [end-label (loop-end-gensym)])
+      (string-append start-label ":\n"
+                     (parse-code (cadr tree) arg-environment)
+                     "\tcmpq\t$0,\t%rax\n"
+                     "\tjne \t" end-label "\n"
+                     (parse-code (caddr tree) arg-environment)
+                     "\tjmp\t" start-label "\n"
+                     end-label ":\n")))
 
   (define (reference-creation-expand tree arg-environment)
     (let ([which (index-of-binding arg-environment (cadr tree))])

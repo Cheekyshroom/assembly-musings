@@ -6,8 +6,8 @@
 	(read_print_lines))
 
 (_function read_print_lines ()
-	(_read_terminate_string $input_buffer $512)
-	(_print_string $input_buffer)
+	(_read_terminate_string $input_buffer $512 $0)
+	(_print_string $input_buffer $1)
 	(_if (_equal_to (_string_compare $quit $input_buffer) $-1)
 		((_identity $20))
 		((read_print_lines))))

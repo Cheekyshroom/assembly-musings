@@ -4,7 +4,7 @@
 	(.text))
 
 (_function _print_string_by_number (number)
-	(_print_string (_add (_mul number $6) $strings))
+	(_print_string (_add (_mul number $6) $strings) $1)
 	(_print_newline))
 
 (_function _print_strings (i)
