@@ -35,7 +35,12 @@
        (if (= i (string-length string))
            '()
            (let ([char (string-ref string i)])
-             (cond [(char=? char #\") 
+             (cond
+                  [(char=? char #\')
+                    (loop (add1 i) (if (eq? m 'i) 'n 'i))]
+                   [(eq? m 'i)
+                    (cons char (loop (add1 i) 'i))]
+                   [(char=? char #\") 
                     (cons char (loop (add1 i) (if (eq? m 'q) 'n 'q)))]
                    [(eq? m 'q)
                     (cons char (loop (add1 i) 'q))]
@@ -52,32 +57,38 @@
 
   (define (index-of-matching-paren string place)
     (let loop ([i place]
-               [parenlevel 1])
+               [parenlevel 1]
+               [mode 'n])
       (cond [(= parenlevel 0) i]
             [(>= i (string-length string)) #f]
-            [else (loop (add1 i)
-                        (case (string-ref string i)
-                          [(#\() (add1 parenlevel)]
-                          [(#\)) (sub1 parenlevel)]
-                          [else parenlevel]))])))
+            [else (if (eq? mode 'i)
+                      (loop (add1 i) parenlevel 
+                            (if (eq? (string-ref string i) #\') 'n 'i))
+                      (loop (add1 i)
+                            (case (string-ref string i)
+                              [(#\() (add1 parenlevel)]
+                              [(#\)) (sub1 parenlevel)]
+                              [else parenlevel])
+                            (if (eq? (string-ref string i) #\')
+                                'i
+                                'n)))])))
 
   (define (code-string->code-tree s)
-    (let ([start (index-of-char s #\()])
-      (if start
-          (let ([end (index-of-matching-paren s (add1 start))])
-            (append
-             (string-split (substring s 0 start) " ")
-             (list (code-string->code-tree
-                    (substring s
-                               (add1 start) 
-                               (sub1 (index-of-matching-paren s (add1 start))))))
-             (if (>= end (string-length s))
-                 '()
-                 (code-string->code-tree (substring s (add1 end))))))
-          (string-split s " "))))
-
-
-
+    (if (eq? (string-ref s 0) #\')
+      (let ([start (index-of-char s #\()])
+        (if start
+            (let ([end (index-of-matching-paren s (add1 start))])
+              (append
+               (string-split (substring s 0 start) " ")
+               (list (code-string->code-tree
+                      (substring s
+                                 (add1 start) 
+                                 (sub1 (index-of-matching-paren s (add1 start))))))
+               (if (>= end (string-length s))
+                   '()
+                   (code-string->code-tree (substring s (add1 end))))))
+            (string-split s " ")))
+      (list s)))
 
 
 

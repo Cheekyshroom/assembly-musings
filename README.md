@@ -45,6 +45,8 @@ and happily run your very own program!
   (.data)
   (heres_a_data_label: .quad 0, 100, 200, 300, 400, 500)
   (.text))
+
+'heres some inlined data that can have parens in it ()'
 ```
 #####Comments
 ```Assembly
@@ -87,6 +89,13 @@ and happily run your very own program!
   (mutate_var (_ref local_variable))
   (_identity local_variable))
 ```
+#####Looping constructs!:
+```Assembly
+(_loop (condition)
+  ((body1)
+   (body2 $1 $2 $3)
+   etc...))
+```
 #####A quick tutorial!:
 ```Assembly
 (_comment Currently data labels must be inlined.)
@@ -113,7 +122,7 @@ Addition, subtraction, division, multiplication, and modulus implemented with th
 ######Strings can be compared with `_string_compare`:
 ```Assembly
 (_inline (.data) (string1: .ascii "Hello\0") (string2: .ascii "Foobar!\0"))
-(_string_compare $string1 $string2) (_comment Will obviously return false)
+(_string_compare $string0 $string2) (_comment Will obviously return false)
 ```
 ######Read from stdin with `_read_string` or `_read_terminate_string`:
 ```Assembly
@@ -150,10 +159,26 @@ Addition, subtraction, division, multiplication, and modulus implemented with th
 ```Assembly
 (_exit_)
 ```
-######And `_set`, which sets the memory location at its first argument to its second:
+######`_set`, which sets the memory location at its first argument to its second:
 ```Assembly
 (_function foo (variable)
 	(_set (_ref variable) (_add variable $20)))
 ```
-
+######`_ref`, which gets the memory location of a binding
+```Assembly
+(_function foo (bar)
+  (_ref bar)) ==> location of bar
+```
+######`_deref`, which gets the value at a certain memory location
+```Assembly
+(_function foo (pointer)
+  (_deref pointer)) ==> value at location pointer points to
+```
+######`bitwise ops`, but also work for logical ops in certain cases
+```Assembly
+(_and $0 $1) ==> false
+(_or $0 $1) ==> true
+(_not $0) ==> false
+(_xor $0 $0) ==> false
+```
 ###That's pretty much it so far, look forward to TCO, loops, and various other fun things soon enough!
