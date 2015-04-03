@@ -4,6 +4,8 @@ A small simple compiler written in racket for x86_64, very unfinished
 This allows you to write x86_64 assembly in a language composed of S-Expressions much like a lisp.
 
 Create a program in a similar form to this.
+#More importantly, this version is non-functional and perhaps won't be worked on much more.
+#So please use commit #e9f636e0eda1648226e665a9524c604412650618 for any examination or actual use you care to.
 
 ```Assembly
 
